@@ -5,7 +5,7 @@ void ImageFusionCPUBenchmark(CImage src1, CImage src2, WORD fading) {
     temp1.Create(width, height, 24);
     temp2.Create(width, height, 24);
     while (1) {
-        ImageFusion(src1, src2, image3, 0);
-        ImageFusionMMX(src1, src2, image4, 0);
+        ImageFusion(src1, src2, image3, fading);
+        ImageFusionMMX(src1, src2, image4, fading);
     }
 }
