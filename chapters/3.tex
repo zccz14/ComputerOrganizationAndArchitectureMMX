@@ -1,0 +1,135 @@
+\section{概述}
+
+\subsection{关键字}
+
+\begin{itemize}
+    \item Byte: 字节 (8 bits)
+    \item Word: 字 (16 bits)
+    \item Doubleword: 双字 (32 bits)
+    \item Quadword: 四字 (64 bits)
+    \item Double Quadword: 八字 (128 bits)
+    \item Pack: 压缩
+    \item Unpack: 解压
+    \item Saturation: 饱和
+\end{itemize}
+
+\subsection{饱和}
+
+饱和(Saturation)是 MMX 的一个很有特点的运算性质，它能在运算结果溢出时直接取上下界的值作为运算结果。
+
+在无符号饱和字运算中，上溢时取结果为 0xFFFF，下溢时取结果为 0x0000。
+
+在带符号饱和字运算中，上溢时取结果为 0x7FFF (32767D)，下溢时取结果为 0x8000 (-32768D)。
+
+以 0x4000 * 0x4000 = 0x10000000 为例，一般的字运算直接截断高位字取低位字得到 0x0000 作为结果，而无符号饱和运算得到 0xFFFF，有符号饱和运算得到 0x7FFF。
+
+\subsection{压缩} \label{pack} 
+
+压缩(打包)/解压缩(解包) 在 MMX 中是一对很重要的操作，它们与 MMX 的效率密不可分。
+
+以 PACKUSWB \footnote{PACKUSWB: Pack with Unsigned Saturation from Word to Byte} (无符号饱和压缩字到字节) 与 PUNPCKLBW \footnote{PUNPCKLBW: Packed Unpack Low-order Byte to Word} 指令为例说明在 MMX 中的压缩/解压缩操作。
+
+指令的格式如下：
+
+\begin{lstlisting}
+PACKUSWB mm mm/m64
+PUNPCKLBW mm mm/m32
+\end{lstlisting}
+
+mm 是 MMX 专用的 64 位寄存器格式，有 mm0, mm1, ..., mm7，共 8 个 64 位寄存器。m64 则表示 64 位内存空间格式，m32 则表示 32 位的内存空间格式。
+
+第一个操作数被称为“目的操作数”，只能通过寄存器寻址；第二个操作数被称为“源操作数”，可以通过寄存器寻址也可以通过内存寻址。
+
+压缩是采取 “有损压缩” 的策略。
+
+PACKUSWB 的机理是先将 64 位操作数视作 4 个字的序列，分别进行无符号饱和压缩，得到 4 个字节；那么 2 个 64 位操作数就可以得到 8 个字节，即一个 64 位数据，然后赋值到目的操作数寄存器中，其中由源操作数得到的 4 个字节在结果中占据高 32 位，而目的操作数压缩得到的 4 个字节在结果中占据低 32 位。
+
+解压缩采取 “交叉组合” (Interleave) 的策略。
+
+PUNPCKLBW 的机理是先将 64 位操作数的低 32 位取出，看作 4 个字节；那么 2 个 64 位操作数可以得到 2 组 4个字节的数据；交叉放置这些字节得到 4 个字，即一个 64 位数据，然后赋值到目的操作数寄存器中，其中由源操作数得到的字节占据字的高位，由目的操作数得到的字节占据字的低位。
+
+举一个具体的例子：
+
+\begin{lstlisting}[language={[x86masm]Assembler}]
+; mm0: 7FFF8000FFFF002B, mm1: 002D1121DEADBEEF
+packuswb mm0, mm1
+; 002D|1121|DEAD|BEEF|7FFF|8000|FFFF|002B
+;   2D|  FF|  00|  00|  FF|  00|  00|  2B
+; mm0: 2DFF0000FF00002B
+punpcklbw mm0, mm1
+; interleave mm1, mm0
+; mm1's lower doubleword: DE|AD|BE|EF
+; mm0's lower doubleword: FF|00|00|2B
+; DE|FF|AD|00|BE|00|EF|2B
+; mm0: DEFFAD00BE00EF2B
+\end{lstlisting}
+
+
+\section{指令说明}
+
+\subsection{指令清单}
+
+\subsubsection{拷贝指令}
+
+\begin{itemize}
+    \item movd: Move Doubleword 拷贝双字(32 bits)
+    \item movq: Move Quadword 拷贝四字(64 bits)
+\end{itemize}
+
+\subsubsection{压缩指令}
+
+解压缩 (Packed Unpack)
+
+
+\begin{itemize}
+    \item punpcklbw: Packed Unpack Low-order Bytes to Word 
+    \item punpcklwd: Packed Unpack Low-order Words to Doubleword
+    \item punpckldq: Packed Unpack Low-order Doublewords to Quadword
+    \item punpcklqdq: Packed Unpack Low-order Quadwords to Double Quadword
+    \item punpckhbw: Packed Unpack High-order Bytes to Word 
+    \item punpckhwd: Packed Unpack High-order Words to Doubleword
+    \item punpckhdq: Packed Unpack High-order Doublewords to Quadword
+    \item punpckhqdq: Packed Unpack High-order Quadwords to Double Quadword
+\end{itemize}
+
+饱和压缩 (Pack with Saturation)
+
+饱和策略分为\textbf{带符号饱和}与\textbf{无符号饱和}。
+
+\begin{itemize}
+    \item packuswb: Pack with Unsigned Saturation Word to Byte
+    \item packusdw: Pack with Unsigned Saturation Doubleword to Word
+    \item packsswb: Pack with Signed Saturation Word to Byte
+    \item packssdw: Pack with Signed Saturation Doubleword to Word
+\end{itemize}
+
+\subsubsection{运算指令}
+
+MMX的运算主要是指 “压缩运算” 。
+
+\textbf{一般来说}，指令名以 p 开头(packed)，然后接着操作名(add, sub, mul等)，然后是运算属性(u: Unsigned, s: Staturation, h: High-order, l: Low-order 等)，最后是操作数的长度(b: Byte, w: Word, d: Doubleword, q: Quadword, dq: Double Quadword)。
+
+以 add 为例：
+
+\begin{itemize}
+    \item paddb: Packed Add Bytes
+    \item paddw: Packed Add Words
+    \item paddd: Packed Add Doublewords
+    \item paddq: Packed Add Quadwords
+    \item paddsb: Packed Add with Signed Saturation Bytes
+    \item paddsw: Packed Add with Signed Saturation Words
+    \item paddusb: Packed Add with Unsigned Saturation Bytes
+    \item paddusw: Packed Add with Unsigned Saturation Words
+\end{itemize}
+
+对于 mul 来说：
+
+\begin{itemize}
+    \item pmuldq: Packed Multiply Doublewords to Quadword
+    \item pmulhrsw: Packed Multiply High with Round and Scale Words *
+    \item pmulhuw: Packed Multiply High-order result of Unsigned Words
+    \item pmulhw: Packed Multiply High-order result of signed Words
+    \item pmulld: Packed Multiply Low-order result of signed Doublewords
+    \item pmullw: Packed Multiply Low-order result of signed Words
+    \item pmulludq: Packed Multiply Low-order result of Unsigned Doublewords to Quadwords
+\end{itemize}

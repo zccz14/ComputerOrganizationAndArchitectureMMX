@@ -1,0 +1,78 @@
+\documentclass{ctexrep}
+\usepackage{subfiles}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+ 
+\urlstyle{same}
+
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  total={170mm,257mm},
+  left=20mm,
+  top=20mm
+}
+\usepackage{graphicx}
+
+\usepackage[
+backend=biber,
+style=alphabetic,
+sorting=ynt
+]{biblatex}
+\addbibresource{reference.bib}
+
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily, numbers=left}
+
+\usepackage{minted}
+
+\renewcommand\lstlistingname{代码}
+\renewcommand\listoflistingscaption{代码清单}
+
+\usepackage{afterpage}
+
+\newcommand \blankpage{
+    \null
+    \thispagestyle{empty}
+    \addtocounter{page}{-1}
+    \newpage
+}
+
+\title{\includegraphics[]{logo.png}\\ 计算机组织与结构实验 \\ 利用 MMX 加速图像处理 }
+
+\author{软件42 \\ 陈铮 \\ 2141601026}
+
+\begin{document}
+
+\maketitle
+
+\afterpage{\blankpage}
+
+\tableofcontents
+
+\chapter{综述}
+\subfile{chapters/1.tex}
+
+\chapter{普通的图像操作}
+\subfile{chapters/2.tex}
+
+\chapter{MMX 指令集}
+\subfile{chapters/3.tex}
+
+\chapter{MMX 图像操作}
+\subfile{chapters/4.tex}
+
+\chapter{实验总结}
+\subfile{chapters/5.tex}
+
+\printbibliography[title={参考文献}]
+
+\listoflistings
+
+\end{document}

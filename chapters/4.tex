@@ -1,0 +1,58 @@
+\section{算法设计}
+
+在 24bpp \footnotemark 位图中，一个色元恰好占据一个字节，而寄存器的长度数倍于此，一个色元单独使用一个寄存器，于时间、空间都有些浪费，希望能用一个寄存器，一个指令，同时处理多个色元。而且数据正好是按字节对齐的，非常符合 MMX 的优化条件。
+
+\footnotetext{24 bits per pixel: 每像素 24 位，即 24 位位图。}
+
+由公式 \ref{eq:1}得色元融合需要对色元做一个乘法，因此处理色元乘法需要一个字长的空间，因此 64 位寄存器最多可能一次性处理 4 个色元。
+
+可以一次取出 4 个色元放置在64位寄存器的低32位，利用之前 \ref{pack} 提过的解压缩指令，将其分散到 64 位寄存器上的 4 个字中，然后按照公式 \ref{eq:1} 给出的算法进行运算。
+
+设 $\max{F} = 32767$，对于渐变值 $F \in [0, \max{F}]$，给定像素色元 $A, B \in [0, 255]$
+
+\begin{equation} \label{eq:2}
+\begin{split}
+    \frac{F A + (\max{F} - F) B}{\max{F}}
+    & = 
+    \frac{2 F A + 2 (\max{F} - F)B}{2\max{F}} \\
+    & \approx 
+    (\frac{F A}{2 (\max{F} + 1)} + \frac{(\max{F} - F) B}{2 (\max{F} + 1)}) \times 2 \\
+    & = 2(\text{mulhw}(A, F) + \text{mulhw}(B, \max{F} - F))
+\end{split}
+\end{equation}
+
+使渐变系数为一个有符号非负整型字的，最大值为 0x7FFF，渐变分为 32768 个级别。
+
+在乘法中，两个字相乘得到一个双字长数据，pmulhw是有符号乘法取结果双字中的高位字，相当于相乘以后除以 65536，因此在算法公式 \ref{eq:2} 中，要刻意凑出分母 65536，这样才可以替换出 pmulhw。
+
+\section{代码实现}
+
+\lstinputlisting[language={[visual]C++}, caption={MMX 图像融合}]{code/ImageFusionMMX.cpp}
+
+\section{性能基准测试}
+
+\lstinputlisting[language={[visual]C++}, caption={基准测试}]{code/Benchmark.cpp}
+
+利用 Visual Studio 的性能探查器可以检测 CPU 使用率。
+
+运行测试约 1 分钟后终止检测，得到函数运行独占样本数：
+
+\begin{center}
+\begin{tabular}{|c|c|}
+    \hline
+    函数名 & 独占样本数 \\
+    \hline
+    ImageFusion & 45049 \\
+    \hline
+    ImageFusionMMX & 15633 \\
+    \hline
+\end{tabular}
+\end{center}
+
+得到近似加速比：
+
+$$
+S = \frac{45049}{15633} = 2.88 \footnotemark
+$$
+
+\footnotetext{实际数据根据不同的实验环境会有所变化，正常范围是 2.0 - 4.0。}

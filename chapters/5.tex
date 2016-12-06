@@ -1,0 +1,25 @@
+一开始有些手足无措，去参考了一下网上老学长的实验报告，只言片语说得我依然懵逼。
+
+但大致了解是要用 Win32 绘制一个界面，依照过去的 Win32 编程经验快速搞了一个框架以后开始研究核心的MMX内联汇编部分。
+
+有很多没见过的指令，各种搜索资料。
+
+后来找到了一些很好用的参考资料：
+
+\begin{itemize}
+    \item x86 Instruction Set Reference \cite{x86_renejeschke_de}
+\end{itemize}
+
+然后结合 Visual Studio 进行单步调试探索一番后弄清楚了各个操作的效果。
+
+最后思考了一番就知道如何设计与普通图像融合等价的MMX图像融合算法了。
+
+最后一边写实验报告一边完善理论，顺便尝试优化了算法，使得加速比变高了。
+
+\section{版权声明}
+
+Copyright \copyright zccz14(陈铮), Follow CC-BY-NC License.
+
+本文使用 \LaTeX 排版，源代码已开源至 GitHub
+
+URL: \href{https://github.com/zccz14/ComputerOrganizationAndArchitectureMMX}{https://github.com/zccz14/ComputerOrganizationAndArchitectureMMX}

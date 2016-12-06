@@ -1,0 +1,11 @@
+\section{算法设计}
+
+同时遍历两个位图的每一个像素的色元，按照公式 \ref{eq:1} 进行颜色合成。
+
+对于 $64 \times 64 $ 像素的 24 位位图，需要进行 $ 3 \times 64 \times 64 = 12288 $ 次迭代。
+
+\section{核心代码实现}
+
+在实现时使用了 ATL 的 CImage 类。
+
+\lstinputlisting[language={[visual]C++}, caption=普通的图像融合]{code/ImageFusion.cpp}
